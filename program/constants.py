@@ -5,7 +5,7 @@ from decouple import config
 MARKET_DATA_MODE = "TESTNET" # vs "MAINNET"
 
 # Close all open positions and orders
-ABORT_ALL_POSITIONS = True
+ABORT_ALL_POSITIONS = False
 
 # Find Cointegrated Pairs
 FIND_COINTEGRATED = True
@@ -26,7 +26,7 @@ WINDOW = 21
 MAX_HALF_LIFE = 24
 ZSCORE_THRESH = 1.5
 USD_PER_TRADE = 10
-USD_MIN_COLLATERAL = 100
+USD_MIN_COLLATERAL = 90
 
 # Thresholds - Closing
 CLOSE_AT_ZSCORE_CROSS = True

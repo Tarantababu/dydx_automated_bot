@@ -91,7 +91,6 @@ async def place_market_order(client, market, side, size, price, reduce_only):
     client.wallet,
     market.order(
       market_order_id,
-      order_type=OrderType.MARKET,
       side = Order.Side.SIDE_BUY if side == "BUY" else Order.Side.SIDE_SELL,
       size = float(size),
       price = float(price), # Adding price in case you wish to flip order type to LIMIT. Else price can = 0.
@@ -206,7 +205,7 @@ async def abort_all_positions(client):
     # Override json file with empty list
     bot_agents = []
     with open("bot_agents.json", "w") as f:
-      json.dump(bot_agents, f)
+      json.dump(bot_agents, f, indent=4)
 
     # Return closed orders
     return close_orders
