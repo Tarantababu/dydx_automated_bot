@@ -99,3 +99,4 @@ ETHEREUM_ADDRESS="YOUR PUBLIC !!! NOT PRIVATE !!! ETHEREUM ADDRESS STARTING WITH
 cd program # if not already in program folder
 python3 main.py
 ```
+# dydx_automated_bot
