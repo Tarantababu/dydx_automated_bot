@@ -91,7 +91,7 @@ async def place_market_order(client, market, side, size, price, reduce_only):
     client.wallet,
     market.order(
       market_order_id,
-      order_type=OrderType.MARKET,
+      #order_type=OrderType.MARKET,
       side = Order.Side.SIDE_BUY if side == "BUY" else Order.Side.SIDE_SELL,
       size = float(size),
       price = float(price), # Adding price in case you wish to flip order type to LIMIT. Else price can = 0.

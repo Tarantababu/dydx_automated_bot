@@ -3,6 +3,7 @@ from func_utils import format_number
 from func_cointegration import calculate_zscore
 from func_public import get_candles_recent, get_markets
 from func_private import place_market_order, get_open_positions, get_order
+from func_messaging import send_message
 import json
 import time
 
@@ -157,6 +158,7 @@ async def manage_trade_exits(client):
         # Close position for market 1
         print(">>> Closing market 1 <<<")
         print(f"Closing position for {position_market_m1}")
+        send_message(f"Closing position for {position_market_m1}")
 
         (close_order_m1, order_id) = await place_market_order(
           client,
@@ -176,6 +178,7 @@ async def manage_trade_exits(client):
         # Close position for market 2
         print(">>> Closing market 2 <<<")
         print(f"Closing position for {position_market_m2}")
+        send_message(f"Closing position for {position_market_m2}")
 
         (close_order_m2, order_id) = await place_market_order(
           client,

@@ -108,7 +108,9 @@ class BotAgent:
     # Print status
     print("---")
     print(f"{self.market_1}: Placing first order...")
-    print(f"Side: {self.base_side}, Size: {self.base_size}, Price: {self.base_price}")
+    print(f"Side: {self.base_side}, Size: {self.base_size}, Price: {self.base_price}, zscore: {self.z_score} ")
+    #send_message(f"{self.market_1}: Placing first order...")
+    #send_message(f"Side: {self.base_side}, Size: {self.base_size}, Price: {self.base_price}")
     print("---")
 
     # Place Base Order
@@ -147,7 +149,9 @@ class BotAgent:
     # Print status - opening second order
     print("---")
     print(f"{self.market_2}: Placing second order...")
-    print(f"Side: {self.quote_side}, Size: {self.quote_size}, Price: {self.quote_price}")
+    #send_message(f"{self.market_2}: Placing second order...")
+    print(f"Side: {self.quote_side}, Size: {self.quote_size}, Price: {self.quote_price}, zscore: zscore: {self.z_score}")
+    #send_message(f"Side: {self.quote_side}, Size: {self.quote_size}, Price: {self.quote_price}")
     print("---")
 
     # Place Quote Order
@@ -221,6 +225,8 @@ class BotAgent:
     else:
       print("")
       print("SUCCESS: LIVE PAIR")
+      print(f"{self.market_1}:{self.base_side} and {self.market_2}:{self.quote_side}, zscore: {self.z_score}, half-life: {self.half_life}")
       print("")
+      send_message(f"{self.market_1}:{self.base_side} and {self.market_2}:{self.quote_side}, zscore: {self.z_score}, half-life: {self.half_life}")
       self.order_dict["pair_status"] = "LIVE"
       return self.order_dict
