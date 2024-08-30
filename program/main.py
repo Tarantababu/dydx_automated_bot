@@ -8,7 +8,6 @@ from func_cointegration import store_cointegration_results
 from func_entry_pairs import open_positions
 from func_exit_pairs import manage_trade_exits
 from func_messaging import send_message
-from func_zscore_positions import send_zscores_of_open_positions
 
 # MAIN FUNCTION
 async def main():
@@ -25,14 +24,6 @@ async def main():
         print("Error connecting to client: ", e)
         send_message(f"Failed to connect to client: {e}")
         exit(1)
-
-    # Send z-scores of all open positions
-    try:
-        print("\nSending z-scores of open positions...")
-        await send_zscores_of_open_positions(client)
-    except Exception as e:
-        print("Error sending z-scores: ", e)
-        send_message(f"Error sending z-scores: {e}")
 
     # Abort all open positions
     if ABORT_ALL_POSITIONS:
