@@ -94,4 +94,3 @@ def store_cointegration_results(df_market_prices):
 
 
 
-

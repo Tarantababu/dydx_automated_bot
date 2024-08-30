@@ -8,8 +8,6 @@ import time
 
 from pprint import pprint
 
-from func_messaging import send_message
-
 # Manage trade exits
 async def manage_trade_exits(client):
 
@@ -199,10 +197,6 @@ async def manage_trade_exits(client):
     # Keep record if items and save
     else:
       save_output.append(position)
-      send_message(f"Closing because z-score is: {z_score_current}")
-      send_message(f"Closing position for {position_market_m1}")
-      send_message(f"Closing position for {position_market_m2}")
-
 
   # Save remaining items
   print(f"{len(save_output)} Items remaining. Saving file...")
