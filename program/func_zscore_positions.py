@@ -7,7 +7,7 @@ from func_messaging import send_message
 async def send_zscores_of_open_positions(client):
     # Get all open positions
     open_positions = await get_open_positions(client)
-    
+
     if not open_positions:
         send_message("No open positions to calculate z-scores.")
         return
@@ -15,13 +15,23 @@ async def send_zscores_of_open_positions(client):
     message = "Z-Scores of Open Positions:\n"
     
     for position in open_positions:
-        market_1 = position["market_1"]
-        market_2 = position["market_2"]
-        hedge_ratio = position["hedge_ratio"]
+        try:
+            market_1 = position["market_1"]
+            market_2 = position["market_2"]
+            hedge_ratio = position["hedge_ratio"]
+        except KeyError as e:
+            print(f"KeyError: {e}. Available keys: {position.keys()}")
+            send_message(f"Error accessing position data: {e}")
+            continue
 
         # Get recent candles
-        series_1 = await get_candles_recent(client, market_1)
-        series_2 = await get_candles_recent(client, market_2)
+        try:
+            series_1 = await get_candles_recent(client, market_1)
+            series_2 = await get_candles_recent(client, market_2)
+        except Exception as e:
+            print(f"Error fetching candles: {e}")
+            message += f"Error fetching data for {market_1}/{market_2}\n"
+            continue
         
         if len(series_1) > 0 and len(series_1) == len(series_2):
             # Calculate z-score
@@ -29,7 +39,7 @@ async def send_zscores_of_open_positions(client):
             z_score = calculate_zscore(spread).values.tolist()[-1]
             message += f"{market_1}/{market_2}: Z-Score = {z_score:.2f}\n"
         else:
-            message += f"Error fetching data for {market_1}/{market_2}\n"
+            message += f"Error processing data for {market_1}/{market_2}\n"
 
     # Send message with z-scores
     send_message(message)
