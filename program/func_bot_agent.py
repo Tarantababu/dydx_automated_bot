@@ -109,6 +109,8 @@ class BotAgent:
     print("---")
     print(f"{self.market_1}: Placing first order...")
     print(f"Side: {self.base_side}, Size: {self.base_size}, Price: {self.base_price}, zscore: {self.z_score} ")
+    print(f"{self.market_2}:  And the second order will be...")
+    print(f"Side: {self.quote_side}, Size: {self.quote_size}, Price: {self.quote_price}, zscore: {self.z_score} ")
     #send_message(f"{self.market_1}: Placing first order...")
     #send_message(f"Side: {self.base_side}, Size: {self.base_size}, Price: {self.base_price}")
     print("---")

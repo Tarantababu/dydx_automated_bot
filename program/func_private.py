@@ -74,7 +74,7 @@ async def check_order_status(client, order_id):
 
 
 # Place market order
-async def place_market_order(client, market, side, size, price, reduce_only):
+async def place_market_order(client, market, side, size, price, reduce_only=False):
 
   # Initialize
   ticker = market
@@ -91,13 +91,13 @@ async def place_market_order(client, market, side, size, price, reduce_only):
     client.wallet,
     market.order(
       market_order_id,
-      #order_type=OrderType.MARKET,
+      #order_type = OrderType.MARKET,
       side = Order.Side.SIDE_BUY if side == "BUY" else Order.Side.SIDE_SELL,
       size = float(size),
       price = float(price), # Adding price in case you wish to flip order type to LIMIT. Else price can = 0.
       time_in_force = time_in_force,
-      reduce_only = reduce_only,
-      good_til_block = good_til_block
+      reduce_only = False,
+      good_til_block = good_til_block + 10,
     ),
   )
 
