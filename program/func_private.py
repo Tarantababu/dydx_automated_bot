@@ -1,30 +1,68 @@
-from dydx_v4_client import NodeClient  # Correct import for client
-from dydx_v4_client.api import PublicAPI, PrivateAPI  # Updated imports
-import json
-import time
+from dydx_v4_client import MAX_CLIENT_ID, Order, OrderFlags
+from dydx_v4_client.node.market import Market
+from dydx_v4_client.indexer.rest.constants import OrderType
+from dydx_v4_client.node.message import cancel_order as dydx_cancel_order
+from constants import DYDX_ADDRESS
+from func_utils import format_number
+from func_public import get_markets
 import random
-import requests
+import time
+import json
+from datetime import datetime
+from pprint import pprint
+from requests.exceptions import HTTPError
 
 # Cache for order IDs
 order_cache = {}
 
-# Initialize client (Make sure to initialize with appropriate credentials and settings)
-client = NodeClient()  # Use NodeClient instead of DYDXClient
+# Cancel Order
+async def cancel_order(client, wallet, order_id, good_til_block, good_til_block_time):
+    if not order_id:
+        print("Invalid order ID. Cannot cancel order.")
+        return
 
-# Get Order Details
-async def get_order(client, order_id):
+    try:
+        # Cancel order using dydx_cancel_order function
+        cancel_order_msg = dydx_cancel_order(
+            order_id,
+            good_til_block,
+            good_til_block_time
+        )
+        response = await client.node.cancel_order(
+            wallet,
+            order_id,
+            good_til_block=good_til_block,
+            good_til_block_time=good_til_block_time
+        )
+        print(response)
+        print(f"Attempted to cancel order for ID {order_id}.")
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            print(f"Order ID {order_id} not found during cancellation: {e}")
+            order_cache.pop(order_id, None)
+        else:
+            print(f"HTTP error cancelling order: {e}")
+    except Exception as e:
+        print(f"Error cancelling order: {e}")
+
+# Get Account
+async def get_account(client):
+    account = await client.indexer_account.account.get_subaccount(DYDX_ADDRESS, 0)
+    return account["subaccount"]
+
+# Get Open Positions
+async def get_open_positions(client):
+    response = await client.indexer_account.account.get_subaccount(DYDX_ADDRESS, 0)
+    return response["subaccount"]["openPerpetualPositions"]
+
+# Get Specific Order Details
+async def get_order_details(client, order_id):
     if not order_id:
         print("Invalid order ID. Cannot get order details.")
         return {}
-
     try:
-        url = f'https://indexer.v4testnet.dydx.exchange/v4/orders/{order_id}'
-        response = requests.get(url)
-        response.raise_for_status()
-        order_details = response.json()
-        order_cache[order_id] = order_details
-        return order_details
-    except requests.exceptions.HTTPError as e:
+        return await client.indexer_account.account.get_order(order_id)
+    except HTTPError as e:
         if e.response.status_code == 404:
             print(f"Order ID {order_id} not found during retrieval: {e}")
             order_cache.pop(order_id, None)
@@ -36,94 +74,6 @@ async def get_order(client, order_id):
         print(f"Error getting order details: {e}")
         return {}
 
-# Cancel Order
-async def cancel_order(client, order_id):
-    if not order_id:
-        print("Invalid order ID. Cannot cancel order.")
-        return
-
-    try:
-        order = await get_order(client, order_id)
-        if not order:
-            print(f"Order ID {order_id} not found. Cannot cancel.")
-            return
-
-        url = f'https://indexer.v4testnet.dydx.exchange/v4/orders/{order_id}/cancel'
-        response = requests.post(url)
-        response.raise_for_status()
-        print(f"Successfully canceled order ID {order_id}.")
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 404:
-            print(f"Order ID {order_id} not found during cancellation: {e}")
-            order_cache.pop(order_id, None)
-        else:
-            print(f"HTTP error cancelling order: {e}")
-    except Exception as e:
-        print(f"Error cancelling order: {e}")
-
-# Place Market Order
-async def place_market_order(client, market, side, size, price, reduce_only):
-    try:
-        # Logic to place the order (you might need to adjust based on API specifics)
-        # Example:
-        order_data = {
-            "market": market,
-            "side": side,
-            "size": size,
-            "price": price,
-            "reduce_only": reduce_only
-        }
-        
-        # Mock URL, replace with actual endpoint
-        url = 'https://indexer.v4testnet.dydx.exchange/v4/orders'
-        response = requests.post(url, json=order_data)
-        response.raise_for_status()
-        order_response = response.json()
-
-        # Add the order ID to the cache
-        order_id = order_response.get("id")
-        if order_id:
-            order_cache[order_id] = order_response
-        else:
-            print("Order ID could not be determined.")
-
-        return (order_response, order_id)
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 404:
-            print(f"Order ID not found during placement: {e}")
-            return (None, None)
-        else:
-            print(f"HTTP error placing order: {e}")
-            return (None, None)
-    except Exception as e:
-        print(f"Error placing order: {e}")
-        return (None, None)
-
-# Get Open Positions
-async def get_open_positions(client):
-    try:
-        url = 'https://indexer.v4testnet.dydx.exchange/v4/positions'
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.HTTPError as e:
-        print(f"HTTP error getting open positions: {e}")
-        return {}
-    except Exception as e:
-        print(f"Error getting open positions: {e}")
-        return {}
-
-# Cancel All Orders
-async def cancel_all_orders(client):
-    try:
-        orders = await get_open_positions(client)
-        if orders:
-            for order in orders:
-                await cancel_order(client, order["id"])
-            print("All open orders attempted to cancel. Please check the Dashboard.")
-    except Exception as e:
-        print(f"Error cancelling all orders: {e}")
-
 # Check Order Status
 async def check_order_status(client, order_id):
     if not order_id:
@@ -131,9 +81,9 @@ async def check_order_status(client, order_id):
         return "FAILED"
 
     try:
-        order = await get_order(client, order_id)
-        return order.get("status", "FAILED") if order else "FAILED"
-    except requests.exceptions.HTTPError as e:
+        order = await get_order_details(client, order_id)
+        return order["status"] if "status" in order else "FAILED"
+    except HTTPError as e:
         if e.response.status_code == 404:
             print(f"Order ID {order_id} not found during status check: {e}")
             order_cache.pop(order_id, None)
@@ -145,26 +95,100 @@ async def check_order_status(client, order_id):
         print(f"Error checking order status: {e}")
         return "FAILED"
 
+# Place Market Order
+async def place_market_order(client, wallet, market, side, size, price, reduce_only):
+    try:
+        ticker = market
+        current_block = await client.node.latest_block_height()
+        market = Market((await client.indexer.markets.get_perpetual_markets(market))["markets"][market])
+        market_order_id = market.order_id(DYDX_ADDRESS, 0, random.randint(0, MAX_CLIENT_ID), OrderFlags.SHORT_TERM)
+        good_til_block = current_block + 1 + 10
+        good_til_block_time = time.time() + 60  # Example: 60 seconds from now
+        
+        order = await client.node.place_order(
+            wallet,
+            market.order(
+                market_order_id,
+                side=Order.Side.SIDE_BUY if side == "BUY" else Order.Side.SIDE_SELL,
+                size=float(size),
+                price=float(price),
+                time_in_force=Order.TIME_IN_FORCE_UNSPECIFIED,
+                reduce_only=reduce_only,
+                good_til_block=good_til_block,
+                good_til_block_time=good_til_block_time
+            ),
+        )
+        
+        # Add the order ID to the cache
+        order_id = None
+        orders = await client.indexer_account.account.get_subaccount_orders(
+            DYDX_ADDRESS, 
+            0, 
+            ticker, 
+            return_latest_orders="true",
+        )
+        
+        for order in orders:
+            client_id = int(order["clientId"])
+            clob_pair_id = int(order["clobPairId"])
+            if client_id == market_order_id.client_id and clob_pair_id == market_order_id.clob_pair_id:
+                order_id = order["id"]
+                order_cache[order_id] = order
+                break
+
+        if not order_id:
+            raise Exception("Order ID could not be determined.")
+        
+        return (order, order_id)
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            print(f"Order ID not found during placement: {e}")
+            return (None, None)
+        else:
+            print(f"HTTP error placing order: {e}")
+            return (None, None)
+    except Exception as e:
+        print(f"Error placing order: {e}")
+        return (None, None)
+
+# Get Open Orders
+async def cancel_all_orders(client, wallet):
+    try:
+        orders = await client.indexer_account.account.get_subaccount_orders(DYDX_ADDRESS, 0, status="OPEN")
+        if len(orders) > 0:
+            current_block = await client.node.latest_block_height()
+            good_til_block = current_block + 1 + 10
+            good_til_block_time = time.time() + 60  # Example: 60 seconds from now
+
+            for order in orders:
+                await cancel_order(client, wallet, order["id"], good_til_block, good_til_block_time)
+            print("You have open orders. Please check the Dashboard to ensure they are cancelled as testnet order requests appear not to be cancelling")
+    except Exception as e:
+        print(f"Error cancelling all orders: {e}")
+
 # Check if there are open positions for a specific market
 async def is_open_positions(client, market):
     open_positions = await get_open_positions(client)
     return any(pos["market"] == market for pos in open_positions.values())
 
-# Abort All Positions
-async def abort_all_positions(client):
+# Abort all open positions
+async def abort_all_positions(client, wallet):
     try:
-        await cancel_all_orders(client)
+        # Cancel all orders
+        await cancel_all_orders(client, wallet)
+
         time.sleep(0.5)
 
         # Get markets for reference of tick size
         markets = await get_markets(client)
+
         time.sleep(0.5)
 
         # Get all open positions
         positions = await get_open_positions(client)
 
         close_orders = []
-        if positions:
+        if len(positions) > 0:
             for item in positions.keys():
                 pos = positions[item]
                 market = pos["market"]
@@ -176,6 +200,7 @@ async def abort_all_positions(client):
 
                 (order, order_id) = await place_market_order(
                     client, 
+                    wallet,
                     market,
                     side,
                     pos["sumOpen"],
