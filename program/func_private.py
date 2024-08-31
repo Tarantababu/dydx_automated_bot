@@ -11,6 +11,9 @@ from datetime import datetime
 from pprint import pprint
 from requests.exceptions import HTTPError
 
+# Cache for order IDs
+order_cache = {}
+
 # Cancel Order
 async def cancel_order(client, order_id):
     if not order_id:
@@ -18,6 +21,10 @@ async def cancel_order(client, order_id):
         return
 
     try:
+        if order_id not in order_cache:
+            print(f"Order ID {order_id} not found in cache. Cannot cancel.")
+            return
+
         order = await get_order(client, order_id)
         if not order:
             print(f"Order ID {order_id} not found. Cannot cancel.")
@@ -39,6 +46,7 @@ async def cancel_order(client, order_id):
     except HTTPError as e:
         if e.response.status_code == 404:
             print(f"Order ID {order_id} not found during cancellation: {e}")
+            order_cache.pop(order_id, None)
         else:
             print(f"HTTP error cancelling order: {e}")
     except Exception as e:
@@ -64,6 +72,7 @@ async def get_order(client, order_id):
     except HTTPError as e:
         if e.response.status_code == 404:
             print(f"Order ID {order_id} not found during retrieval: {e}")
+            order_cache.pop(order_id, None)
             return {}
         else:
             print(f"HTTP error getting order details: {e}")
@@ -84,6 +93,7 @@ async def check_order_status(client, order_id):
     except HTTPError as e:
         if e.response.status_code == 404:
             print(f"Order ID {order_id} not found during status check: {e}")
+            order_cache.pop(order_id, None)
             return "NOT_FOUND"
         else:
             print(f"HTTP error checking order status: {e}")
@@ -126,6 +136,7 @@ async def place_market_order(client, market, side, size, price, reduce_only):
         for order in orders:
             if int(order["clientId"]) == market_order_id.client_id and int(order["clobPairId"]) == market_order_id.clob_pair_id:
                 order_id = order["id"]
+                order_cache[order_id] = order
                 break
 
         if not order_id:
