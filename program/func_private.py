@@ -164,7 +164,6 @@ async def cancel_all_orders(client):
             for order in orders:
                 await cancel_order(client, order["id"])
             print("You have open orders. Please check the Dashboard to ensure they are cancelled as testnet order requests appear not to be cancelling")
-            exit(1)
     except Exception as e:
         print(f"Error cancelling all orders: {e}")
 
@@ -211,6 +210,8 @@ async def abort_all_positions(client):
 
                 if order and order_id:
                     close_orders.append(order)
+                else:
+                    print(f"Failed to place close order for {market}. Skipping.")
 
                 time.sleep(0.2)
 
