@@ -8,7 +8,6 @@ import random
 import time
 import json
 from datetime import datetime
-from dydx_v4_client.exceptions import HTTPError
 import asyncio
 
 # Cache for storing order IDs and details
@@ -36,14 +35,11 @@ async def cancel_order(client, order_id):
         )
         print(f"Cancel response: {response}")
         print(f"Attempted to cancel order for: {order['ticker']}. Please check dashboard to ensure cancelled.")
-    except HTTPError as e:
-        if e.response.status_code == 404:
-            print(f"Order ID {order_id} not found during cancellation: {e}")
-            order_cache.pop(order_id, None)
-        else:
-            print(f"HTTP error cancelling order: {e}")
     except Exception as e:
         print(f"Error cancelling order: {e}")
+        if '404' in str(e):
+            print(f"Order ID {order_id} not found during cancellation.")
+            order_cache.pop(order_id, None)
 
 # Function to get account details
 async def get_account(client):
@@ -62,16 +58,11 @@ async def get_order_details(client, order_id):
         return {}
     try:
         return await client.indexer_account.account.get_order(order_id)
-    except HTTPError as e:
-        if e.response.status_code == 404:
-            print(f"Order ID {order_id} not found during retrieval: {e}")
-            order_cache.pop(order_id, None)
-            return {}
-        else:
-            print(f"HTTP error getting order details: {e}")
-            return {}
     except Exception as e:
         print(f"Error getting order details: {e}")
+        if '404' in str(e):
+            print(f"Order ID {order_id} not found during retrieval.")
+            order_cache.pop(order_id, None)
         return {}
 
 # Function to place a market order
