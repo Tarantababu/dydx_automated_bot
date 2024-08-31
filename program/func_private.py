@@ -88,7 +88,7 @@ async def check_order_status(client, order_id):
         return "FAILED"
 
     try:
-        order = await client.indexer_account.account.get_order(order_id)
+        order = await get_order(client, order_id)
         return order["status"] if "status" in order else "FAILED"
     except HTTPError as e:
         if e.response.status_code == 404:
@@ -124,7 +124,8 @@ async def place_market_order(client, market, side, size, price, reduce_only):
             ),
         )
         
-        time.sleep(1.5)
+        # Add the order ID to the cache
+        order_id = None
         orders = await client.indexer_account.account.get_subaccount_orders(
             DYDX_ADDRESS, 
             0, 
@@ -132,9 +133,10 @@ async def place_market_order(client, market, side, size, price, reduce_only):
             return_latest_orders = "true",
         )
         
-        order_id = ""
         for order in orders:
-            if int(order["clientId"]) == market_order_id.client_id and int(order["clobPairId"]) == market_order_id.clob_pair_id:
+            client_id = int(order["clientId"])
+            clob_pair_id = int(order["clobPairId"])
+            if client_id == market_order_id.client_id and clob_pair_id == market_order_id.clob_pair_id:
                 order_id = order["id"]
                 order_cache[order_id] = order
                 break
