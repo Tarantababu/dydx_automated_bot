@@ -19,6 +19,10 @@ async def cancel_order(client, order_id):
 
     try:
         order = await get_order(client, order_id)
+        if not order:
+            print(f"Order ID {order_id} not found. Cannot cancel.")
+            return
+
         market = Market((await client.indexer.markets.get_perpetual_markets(order["ticker"]))["markets"][order["ticker"]])
         market_order_id = market.order_id(DYDX_ADDRESS, 0, random.randint(0, MAX_CLIENT_ID), OrderFlags.SHORT_TERM)
         market_order_id.client_id = int(order["clientId"])
@@ -34,7 +38,7 @@ async def cancel_order(client, order_id):
         print(f"Attempted to cancel order for: {order['ticker']}. Please check dashboard to ensure cancelled.")
     except HTTPError as e:
         if e.response.status_code == 404:
-            print(f"Order ID {order_id} not found: {e}")
+            print(f"Order ID {order_id} not found during cancellation: {e}")
         else:
             print(f"HTTP error cancelling order: {e}")
     except Exception as e:
@@ -59,7 +63,7 @@ async def get_order(client, order_id):
         return await client.indexer_account.account.get_order(order_id)
     except HTTPError as e:
         if e.response.status_code == 404:
-            print(f"Order ID {order_id} not found: {e}")
+            print(f"Order ID {order_id} not found during retrieval: {e}")
             return {}
         else:
             print(f"HTTP error getting order details: {e}")
@@ -79,7 +83,7 @@ async def check_order_status(client, order_id):
         return order["status"] if "status" in order else "FAILED"
     except HTTPError as e:
         if e.response.status_code == 404:
-            print(f"Order ID {order_id} not found: {e}")
+            print(f"Order ID {order_id} not found during status check: {e}")
             return "NOT_FOUND"
         else:
             print(f"HTTP error checking order status: {e}")
@@ -110,7 +114,6 @@ async def place_market_order(client, market, side, size, price, reduce_only):
             ),
         )
         
-        # Ensure Order Placement
         time.sleep(1.5)
         orders = await client.indexer_account.account.get_subaccount_orders(
             DYDX_ADDRESS, 
