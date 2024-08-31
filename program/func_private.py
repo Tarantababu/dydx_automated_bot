@@ -1,7 +1,5 @@
-from dydx_v4_client import NodeClient  # Updated import
-from dydx_v4_client.constants import OrderSide, TimeInForce
-from dydx_v4_client.exceptions import ClientError
-from constants import DYDX_ADDRESS
+from dydx_v4_client import NodeClient  # Correct import for client
+from dydx_v4_client.api import PublicAPI, PrivateAPI  # Updated imports
 import json
 import time
 import random
