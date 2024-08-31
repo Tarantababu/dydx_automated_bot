@@ -152,6 +152,11 @@ async def cancel_all_orders(client):
     except Exception as e:
         print(f"Error cancelling all orders: {e}")
 
+# Check if there are open positions for a specific market
+async def is_open_positions(client, market):
+    open_positions = await get_open_positions(client)
+    return any(pos["market"] == market for pos in open_positions.values())
+
 # Abort all open positions
 async def abort_all_positions(client):
     try:
