@@ -1,4 +1,4 @@
-from dydx_v4_client import DYDXClient
+from dydx_v4_client import NodeClient  # Updated import
 from dydx_v4_client.constants import OrderSide, TimeInForce
 from dydx_v4_client.exceptions import ClientError
 from constants import DYDX_ADDRESS
@@ -11,7 +11,7 @@ import requests
 order_cache = {}
 
 # Initialize client (Make sure to initialize with appropriate credentials and settings)
-client = DYDXClient()
+client = NodeClient()  # Use NodeClient instead of DYDXClient
 
 # Get Order Details
 async def get_order(client, order_id):
