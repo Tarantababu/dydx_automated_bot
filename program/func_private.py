@@ -13,6 +13,10 @@ from requests.exceptions import HTTPError
 
 # Cancel Order
 async def cancel_order(client, order_id):
+    if not order_id:
+        print("Invalid order ID. Cannot cancel order.")
+        return
+
     try:
         order = await get_order(client, order_id)
         market = Market((await client.indexer.markets.get_perpetual_markets(order["ticker"]))["markets"][order["ticker"]])
@@ -48,17 +52,28 @@ async def get_open_positions(client):
 
 # Get Existing Order
 async def get_order(client, order_id):
-    return await client.indexer_account.account.get_order(order_id)
-
-# Get existing open positions
-async def is_open_positions(client, market):
-    time.sleep(0.2)
-    response = await client.indexer_account.account.get_subaccount(DYDX_ADDRESS, 0)
-    open_positions = response["subaccount"]["openPerpetualPositions"]
-    return market in open_positions
+    if not order_id:
+        print("Invalid order ID. Cannot get order details.")
+        return {}
+    try:
+        return await client.indexer_account.account.get_order(order_id)
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            print(f"Order ID {order_id} not found: {e}")
+            return {}
+        else:
+            print(f"HTTP error getting order details: {e}")
+            return {}
+    except Exception as e:
+        print(f"Error getting order details: {e}")
+        return {}
 
 # Check order status
 async def check_order_status(client, order_id):
+    if not order_id:
+        print("Invalid order ID. Cannot check order status.")
+        return "FAILED"
+
     try:
         order = await client.indexer_account.account.get_order(order_id)
         return order["status"] if "status" in order else "FAILED"
