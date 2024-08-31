@@ -9,6 +9,7 @@ import time
 import json
 from datetime import datetime
 from pprint import pprint
+from requests.exceptions import HTTPError
 
 # Cancel Order
 async def cancel_order(client, order_id):
@@ -27,6 +28,11 @@ async def cancel_order(client, order_id):
         )
         print(cancel)
         print(f"Attempted to cancel order for: {order['ticker']}. Please check dashboard to ensure cancelled.")
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            print(f"Order ID {order_id} not found: {e}")
+        else:
+            print(f"HTTP error cancelling order: {e}")
     except Exception as e:
         print(f"Error cancelling order: {e}")
 
@@ -53,8 +59,19 @@ async def is_open_positions(client, market):
 
 # Check order status
 async def check_order_status(client, order_id):
-    order = await client.indexer_account.account.get_order(order_id)
-    return order["status"] if "status" in order else "FAILED"
+    try:
+        order = await client.indexer_account.account.get_order(order_id)
+        return order["status"] if "status" in order else "FAILED"
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            print(f"Order ID {order_id} not found: {e}")
+            return "NOT_FOUND"
+        else:
+            print(f"HTTP error checking order status: {e}")
+            return "FAILED"
+    except Exception as e:
+        print(f"Error checking order status: {e}")
+        return "FAILED"
 
 # Place market order
 async def place_market_order(client, market, side, size, price, reduce_only):
@@ -97,6 +114,13 @@ async def place_market_order(client, market, side, size, price, reduce_only):
             raise Exception("Order ID could not be determined.")
         
         return (order, order_id)
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            print(f"Order ID not found during placement: {e}")
+            return (None, None)
+        else:
+            print(f"HTTP error placing order: {e}")
+            return (None, None)
     except Exception as e:
         print(f"Error placing order: {e}")
         return (None, None)
