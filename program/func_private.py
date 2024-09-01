@@ -84,7 +84,7 @@ async def place_market_order(client, market, side, size, price, reduce_only=Fals
   good_til_block = current_block + 1 + 10
 
   # Set Time In Force
-  time_in_force = Order.TIME_IN_FORCE_UNSPECIFIED
+  time_in_force = Order.TIME_IN_FORCE_FILL_OR_KILL
 
   # Place Market Order
   order = await client.node.place_order(
